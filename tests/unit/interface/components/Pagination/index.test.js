@@ -1,7 +1,9 @@
-import { render } from '@testing-library/react';
+import { cleanup, render } from '@testing-library/react';
 
 import webserver from 'infra/webserver';
 import Pagination from 'pages/interface/components/Pagination';
+
+afterEach(() => cleanup());
 
 describe('Pagination', () => {
   it('should not render links if there is no previous or next page', () => {
