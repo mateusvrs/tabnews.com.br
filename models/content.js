@@ -917,8 +917,22 @@ async function findTree(options = {}) {
       LEFT JOIN LATERAL
         get_content_balance_credit_debit(c.id) tabcoins_count ON true
       WHERE
-        path @> ARRAY[$1]::uuid[] AND
-        status = 'published';`;
+        contents.path @> ARRAY[$1]::uuid[]
+        AND (
+          contents.status = 'published'
+          OR (
+            contents.status = 'deleted'
+            AND EXISTS (
+              SELECT 1
+              FROM contents descendants
+              WHERE descendants.path @> ARRAY[contents.id]::uuid[]
+              AND descendants.status = 'published'
+              AND array_length(descendants.path, 1) = array_length(contents.path, 1) + 1
+            )
+          )
+        )
+      ORDER BY
+        contents.published_at;`;
 
     const queryTree = `
       WITH parent AS (SELECT * FROM contents
@@ -958,7 +972,18 @@ async function findTree(options = {}) {
       LEFT JOIN LATERAL
         get_content_balance_credit_debit(c.id) tabcoins_count ON true
       WHERE
-        c.status = 'published';`;
+        c.status = 'published'
+        OR (
+          c.status = 'deleted'
+          AND EXISTS (
+            SELECT 1
+            FROM contents descendants
+            WHERE
+              descendants.path @> ARRAY[c.id]::uuid[]
+              AND descendants.status = 'published'
+              AND array_length(descendants.path, 1) = array_length(c.path, 1) + 1
+          )
+        ) ORDER BY published_at;`;
 
     const query = {
       text: options.where.parent_id ? queryChildrenByParentId : queryTree,
@@ -999,6 +1024,10 @@ async function findTree(options = {}) {
         table[row.parent_id].children.push(row);
       } else if (!row.path.some((id) => table[id])) {
         tree.children.push(row);
+      } else {
+        const reversed = row.path.slice().reverse();
+        const parent = reversed.find((id) => table[id]);
+        table[parent].children.push(row);
       }
     });
 
