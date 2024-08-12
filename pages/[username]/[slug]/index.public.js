@@ -191,6 +191,7 @@ function RenderChildrenTree({ childrenList, pageRootOwnerId, renderIntent, rende
     const labelShowMore = Math.min(groupedCount, renderIncrement) || '';
     const plural = labelShowMore != 1 ? 's' : '';
     const isPageRootOwner = pageRootOwnerId === owner_id;
+    const deletedContent = child.status === 'deleted';
 
     return !renderIntent && !renderShowMore ? null : (
       <Box
@@ -210,7 +211,7 @@ function RenderChildrenTree({ childrenList, pageRootOwnerId, renderIntent, rende
                 flexDirection: 'column',
                 alignItems: 'center',
               }}>
-              <TabCoinButtons content={child} />
+              {!deletedContent && <TabCoinButtons content={child} />}
               <Tooltip
                 direction="ne"
                 aria-label={`Ocultar resposta${plural}`}
@@ -221,6 +222,7 @@ function RenderChildrenTree({ childrenList, pageRootOwnerId, renderIntent, rende
                   width: '80%',
                   height: '100%',
                   minHeight: '24px',
+                  minWidth: '1.5rem',
                   display: 'flex',
                   justifyContent: 'center',
                   mt: 1,
@@ -266,9 +268,11 @@ function RenderChildrenTree({ childrenList, pageRootOwnerId, renderIntent, rende
               sx={{ display: 'flex', flexDirection: 'column', width: '100%', mt: '9px', pl: '1px', overflow: 'auto' }}>
               <Content content={child} isPageRootOwner={isPageRootOwner} mode="view" />
 
-              <Box sx={{ display: 'flex', flex: 1, mt: 4, alignItems: 'end' }}>
-                <Content content={{ owner_id, parent_id: id }} mode="compact" viewFrame={true} />
-              </Box>
+              {!deletedContent && (
+                <Box sx={{ display: 'flex', flex: 1, mt: 4, alignItems: 'end' }}>
+                  <Content content={{ owner_id, parent_id: id }} mode="compact" viewFrame={true} />
+                </Box>
+              )}
 
               {children_deep_count > 0 && (
                 <RenderChildrenTree

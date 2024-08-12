@@ -134,6 +134,7 @@ function ViewMode({ setComponentMode, contentObject, isPageRootOwner, viewFrame 
   const { user, fetchUser } = useUser();
   const [globalErrorMessage, setGlobalErrorMessage] = useState(null);
   const confirm = useConfirm();
+  const deletedContent = contentObject.status === 'deleted';
 
   const handleClickDelete = async () => {
     const confirmDelete = await confirm({
@@ -168,7 +169,8 @@ function ViewMode({ setComponentMode, contentObject, isPageRootOwner, viewFrame 
     }
   };
 
-  const isOptionsMenuVisible = user?.id === contentObject.owner_id || user?.features?.includes('update:content:others');
+  const isOptionsMenuVisible =
+    (user?.id === contentObject.owner_id || user?.features?.includes('update:content:others')) && !deletedContent;
 
   return (
     <Box
@@ -213,6 +215,7 @@ function ViewMode({ setComponentMode, contentObject, isPageRootOwner, viewFrame 
                   <Label variant="success">Patrocinado</Label>
                 </Tooltip>
               )}
+              {deletedContent && <Label variant="attention">Conteúdo deletado</Label>}
             </LabelGroup>
             {!contentObject.parent_id && (
               <>
@@ -220,26 +223,30 @@ function ViewMode({ setComponentMode, contentObject, isPageRootOwner, viewFrame 
                 {' · '}
               </>
             )}
-            <Link
-              href={`/${contentObject.owner_username}/${contentObject.slug}`}
-              prefetch={false}
-              sx={{ fontSize: 0, color: 'fg.muted' }}>
-              <PastTime direction="n" date={contentObject.published_at} sx={{ position: 'absolute' }} />
-            </Link>
+            {!deletedContent && (
+              <Link
+                href={`/${contentObject.owner_username}/${contentObject.slug}`}
+                prefetch={false}
+                sx={{ fontSize: 0, color: 'fg.muted' }}>
+                <PastTime direction="n" date={contentObject.published_at} sx={{ position: 'absolute' }} />
+              </Link>
+            )}
           </Box>
           {isOptionsMenuVisible && (
             <ViewModeOptionsMenu onComponentModeChange={setComponentMode} onDelete={handleClickDelete} />
           )}
         </Box>
 
-        {!contentObject.parent_id && contentObject.title && (
+        {!contentObject.parent_id && contentObject.title && !deletedContent && (
           <Heading sx={{ overflow: 'auto', wordWrap: 'break-word' }} as="h1">
             {contentObject.title}
           </Heading>
         )}
       </Box>
       <Box sx={{ overflow: 'hidden' }}>
-        <Viewer value={contentObject.body} clobberPrefix={`${contentObject.owner_username}-content-`} />
+        {!deletedContent && (
+          <Viewer value={contentObject.body} clobberPrefix={`${contentObject.owner_username}-content-`} />
+        )}
       </Box>
       {contentObject.source_url && (
         <Box>
